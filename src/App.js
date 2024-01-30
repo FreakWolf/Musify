@@ -1,5 +1,6 @@
 // App.js
-import React, { useState, useRef } from "react";
+
+import React, { useState, useRef, useEffect } from "react";
 import Nav from "./components/Nav";
 import Library from "./components/Library";
 import Player from "./components/Player";
@@ -17,6 +18,46 @@ function App() {
     animationPercentage: 0,
   });
   const [libraryStatus, setLibraryStatus] = useState(false);
+  const saveSongsToIndexedDB = async (songsToSave) => {
+    const db = await openDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], "readwrite");
+      const objectStore = transaction.objectStore(STORE_NAME);
+
+      objectStore.clear();
+
+      songsToSave.forEach((song) => {
+        const request = objectStore.add(song);
+
+        request.onsuccess = (event) => {
+          resolve("Songs saved to IndexedDB");
+        };
+
+        request.onerror = (event) => {
+          reject("Error saving songs to IndexedDB");
+        };
+      });
+    });
+  };
+
+  // Load songs from localStorage on initial render
+  useEffect(() => {
+    // Load songs from IndexedDB on initial render
+    const loadSongsFromIndexedDB = async () => {
+      const savedSongs = await loadSongs();
+      if (savedSongs) {
+        setSongs(savedSongs);
+      }
+    };
+
+    loadSongsFromIndexedDB();
+  }, []);
+
+  useEffect(() => {
+    // Save songs to IndexedDB whenever the songs state changes
+    saveSongsToIndexedDB(songs);
+  }, [songs]);
 
   const timeUpdateHandler = (e) => {
     const currentTime = e.target.currentTime;
@@ -69,7 +110,7 @@ function App() {
         id: `upload-${Math.random()}`,
         name: file.name.replace(".mp3", ""),
         artist: "Unknown Artist",
-        cover: "path/to/default/cover.jpg", // You can set a default cover image
+        cover: "path/to/default/cover.jpg",
         audio: reader.result,
         active: false,
       };
@@ -83,7 +124,11 @@ function App() {
 
   return (
     <div className={`App ${libraryStatus ? "library-active" : ""}`}>
-      <Nav libraryStatus={libraryStatus} setLibraryStatus={setLibraryStatus} onFileChange={handleFileChange} />
+      <Nav
+        libraryStatus={libraryStatus}
+        setLibraryStatus={setLibraryStatus}
+        onFileChange={handleFileChange}
+      />
       {currentSong && <Song currentSong={currentSong} />}
       <Player
         currentSong={currentSong}
@@ -116,3 +161,71 @@ function App() {
 }
 
 export default App;
+
+// Functions for IndexedDB
+
+const DB_NAME = "songDatabase";
+const STORE_NAME = "songsStore";
+
+const openDB = () => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onerror = (event) => {
+      reject("Error opening database");
+    };
+
+    request.onsuccess = (event) => {
+      const db = event.target.result;
+      resolve(db);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      store.createIndex("id", "id", { unique: true });
+    };
+  });
+};
+
+const loadSongs = async () => {
+  const db = await openDB();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], "readonly");
+    const objectStore = transaction.objectStore(STORE_NAME);
+
+    const request = objectStore.getAll();
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+
+    request.onerror = (event) => {
+      reject("Error loading songs from IndexedDB");
+    };
+  });
+};
+
+const saveSongsToIndexedDB = async () => {
+  const db = await openDB();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], "readwrite");
+    const objectStore = transaction.objectStore(STORE_NAME);
+
+    objectStore.clear();
+
+    Song.forEach((song) => {
+      const request = objectStore.add(song);
+
+      request.onsuccess = (event) => {
+        resolve("Songs saved to IndexedDB");
+      };
+
+      request.onerror = (event) => {
+        reject("Error saving songs to IndexedDB");
+      };
+    });
+  });
+};
