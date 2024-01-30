@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+// App.js
+import React, { useState, useRef } from "react";
 import Nav from "./components/Nav";
 import Library from "./components/Library";
 import Player from "./components/Player";
@@ -17,21 +18,6 @@ function App() {
   });
   const [libraryStatus, setLibraryStatus] = useState(false);
 
-  // Use localStorage to store and retrieve data
-  useEffect(() => {
-    const lastSongId = localStorage.getItem("lastSongId");
-    const lastSongTime = parseFloat(localStorage.getItem("lastSongTime"));
-
-    if (lastSongId && lastSongTime && songs.length > 0) {
-      const lastSong = songs.find((song) => song.id === lastSongId);
-
-      if (lastSong) {
-        setCurrentSong(lastSong);
-        audioRef.current.currentTime = lastSongTime;
-      }
-    }
-  }, [songs]);
-
   const timeUpdateHandler = (e) => {
     const currentTime = e.target.currentTime;
     const duration = e.target.duration;
@@ -46,12 +32,6 @@ function App() {
       duration,
       animationPercentage: animation,
     });
-
-    // Update localStorage with the current song and time
-    if (currentSong) {
-      localStorage.setItem("lastSongId", currentSong.id);
-      localStorage.setItem("lastSongTime", currentTime.toString());
-    }
   };
 
   const activeLibraryHandler = (nextPrev) => {
@@ -85,14 +65,12 @@ function App() {
     const reader = new FileReader();
 
     reader.onload = () => {
-      const audioURL = URL.createObjectURL(file);
-
       const newSong = {
         id: `upload-${Math.random()}`,
         name: file.name.replace(".mp3", ""),
         artist: "Unknown Artist",
         cover: "path/to/default/cover.jpg", // You can set a default cover image
-        audio: audioURL, // Use the created URL for audio source
+        audio: reader.result,
         active: false,
       };
 
@@ -105,11 +83,7 @@ function App() {
 
   return (
     <div className={`App ${libraryStatus ? "library-active" : ""}`}>
-      <Nav
-        libraryStatus={libraryStatus}
-        setLibraryStatus={setLibraryStatus}
-        onFileChange={handleFileChange}
-      />
+      <Nav libraryStatus={libraryStatus} setLibraryStatus={setLibraryStatus} onFileChange={handleFileChange} />
       {currentSong && <Song currentSong={currentSong} />}
       <Player
         currentSong={currentSong}
