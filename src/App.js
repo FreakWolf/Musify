@@ -41,13 +41,17 @@ function App() {
     });
   };
 
-  // Load songs from localStorage on initial render
+  // Load songs from IndexedDB on initial render
   useEffect(() => {
-    // Load songs from IndexedDB on initial render
     const loadSongsFromIndexedDB = async () => {
-      const savedSongs = await loadSongs();
-      if (savedSongs) {
-        setSongs(savedSongs);
+      try {
+        const savedSongs = await loadSongs();
+        if (savedSongs && savedSongs.length > 0) {
+          setSongs(savedSongs);
+          setCurrentSong(savedSongs[0]); // Set the current song to the first one in the list
+        }
+      } catch (error) {
+        console.error("Error loading songs from IndexedDB:", error);
       }
     };
 
