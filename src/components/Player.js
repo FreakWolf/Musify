@@ -1,11 +1,7 @@
+// Player.js
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlay,
-  faPause,
-  faAngleLeft,
-  faAngleRight,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faAngleLeft, faAngleRight } from "@fortawesome/free-solid-svg-icons";
 
 const Player = ({
   currentSong,
@@ -43,6 +39,8 @@ const Player = ({
   };
 
   const skipTrackHandler = async (direction) => {
+    if (!currentSong) return;
+
     const currentIndex = songs.findIndex((song) => song.id === currentSong.id);
     if (direction === "skip-forward") {
       await setCurrentSong(songs[(currentIndex + 1) % songs.length]);
@@ -61,12 +59,12 @@ const Player = ({
     if (isPlaying) audioRef.current.play();
   };
 
-  const trackAnimation = {
-    transform: `translateX(${songInfo.animationPercentage}%)`,
-  };
-  const linearGradient = {
-    background: `linear-gradient(to right, ${currentSong.color[0]}, ${currentSong.color[1]})`,
-  };
+  const trackAnimation = currentSong
+    ? { transform: `translateX(${songInfo.animationPercentage}%)` }
+    : {};
+  const linearGradient = currentSong && currentSong.color
+    ? { background: `linear-gradient(to right, ${currentSong.color[0]}, ${currentSong.color[1]})` }
+    : {};
 
   return (
     <div className="player">

@@ -1,15 +1,14 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Nav from "./components/Nav";
 import Library from "./components/Library";
 import Player from "./components/Player";
 import Song from "./components/Song";
 import "./styles/app.scss";
-import data from "./data";
 
 function App() {
   const audioRef = useRef(null);
-  const [songs, setSongs] = useState(data());
-  const [currentSong, setCurrentSong] = useState(songs[0]);
+  const [songs, setSongs] = useState([]);
+  const [currentSong, setCurrentSong] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [songInfo, setSongInfo] = useState({
     currentTime: 0,
@@ -17,6 +16,21 @@ function App() {
     animationPercentage: 0,
   });
   const [libraryStatus, setLibraryStatus] = useState(false);
+
+  // Use localStorage to store and retrieve data
+  useEffect(() => {
+    const lastSongId = localStorage.getItem("lastSongId");
+    const lastSongTime = parseFloat(localStorage.getItem("lastSongTime"));
+
+    if (lastSongId && lastSongTime && songs.length > 0) {
+      const lastSong = songs.find((song) => song.id === lastSongId);
+
+      if (lastSong) {
+        setCurrentSong(lastSong);
+        audioRef.current.currentTime = lastSongTime;
+      }
+    }
+  }, [songs]);
 
   const timeUpdateHandler = (e) => {
     const currentTime = e.target.currentTime;
@@ -32,6 +46,12 @@ function App() {
       duration,
       animationPercentage: animation,
     });
+
+    // Update localStorage with the current song and time
+    if (currentSong) {
+      localStorage.setItem("lastSongId", currentSong.id);
+      localStorage.setItem("lastSongTime", currentTime.toString());
+    }
   };
 
   const activeLibraryHandler = (nextPrev) => {
@@ -56,15 +76,41 @@ function App() {
     await setCurrentSong(songs[(currentIndex + 1) % songs.length]);
     activeLibraryHandler(songs[(currentIndex + 1) % songs.length]);
 
-    audioRef.current.addEventListener('canplaythrough', () => {
+    audioRef.current.addEventListener("canplaythrough", () => {
       if (isPlaying) audioRef.current.play();
     });
   };
 
+  const handleFileChange = (file) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const audioURL = URL.createObjectURL(file);
+
+      const newSong = {
+        id: `upload-${Math.random()}`,
+        name: file.name.replace(".mp3", ""),
+        artist: "Unknown Artist",
+        cover: "path/to/default/cover.jpg", // You can set a default cover image
+        audio: audioURL, // Use the created URL for audio source
+        active: false,
+      };
+
+      setSongs([...songs, newSong]);
+      setCurrentSong(newSong);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className={`App ${libraryStatus ? "library-active" : ""}`}>
-      <Nav libraryStatus={libraryStatus} setLibraryStatus={setLibraryStatus} />
-      <Song currentSong={currentSong} />
+      <Nav
+        libraryStatus={libraryStatus}
+        setLibraryStatus={setLibraryStatus}
+        onFileChange={handleFileChange}
+      />
+      {currentSong && <Song currentSong={currentSong} />}
       <Player
         currentSong={currentSong}
         isPlaying={isPlaying}
@@ -89,7 +135,7 @@ function App() {
         onLoadedMetadata={timeUpdateHandler}
         onEnded={songEndHandler}
         ref={audioRef}
-        src={currentSong.audio}
+        src={currentSong ? currentSong.audio : null}
       ></audio>
     </div>
   );
