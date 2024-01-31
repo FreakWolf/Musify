@@ -1,5 +1,3 @@
-// App.js
-
 import React, { useState, useRef, useEffect } from "react";
 import Nav from "./components/Nav";
 import Library from "./components/Library";
@@ -49,7 +47,7 @@ function App() {
         const savedSongs = await loadSongs();
         if (savedSongs && savedSongs.length > 0) {
           setSongs(savedSongs);
-          setCurrentSong(savedSongs[0]); // Set the current song to the first one in the list
+          setCurrentSong(savedSongs[0]);
         }
       } catch (error) {
         console.error("Error loading songs from IndexedDB:", error);
