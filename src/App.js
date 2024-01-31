@@ -6,6 +6,7 @@ import Library from "./components/Library";
 import Player from "./components/Player";
 import Song from "./components/Song";
 import "./styles/app.scss";
+import logo from "./logo.png"
 
 function App() {
   const audioRef = useRef(null);
@@ -113,8 +114,7 @@ function App() {
       const newSong = {
         id: `upload-${Math.random()}`,
         name: file.name.replace(".mp3", ""),
-        artist: "Unknown Artist",
-        cover: "path/to/default/cover.jpg",
+        cover: logo,
         audio: reader.result,
         active: false,
       };
