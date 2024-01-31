@@ -6,7 +6,7 @@ import Library from "./components/Library";
 import Player from "./components/Player";
 import Song from "./components/Song";
 import "./styles/app.scss";
-import logo from "./logo.png"
+import logo from "./logo.png";
 
 function App() {
   const audioRef = useRef(null);
@@ -208,28 +208,5 @@ const loadSongs = async () => {
     request.onerror = (event) => {
       reject("Error loading songs from IndexedDB");
     };
-  });
-};
-
-const saveSongsToIndexedDB = async () => {
-  const db = await openDB();
-
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], "readwrite");
-    const objectStore = transaction.objectStore(STORE_NAME);
-
-    objectStore.clear();
-
-    Song.forEach((song) => {
-      const request = objectStore.add(song);
-
-      request.onsuccess = (event) => {
-        resolve("Songs saved to IndexedDB");
-      };
-
-      request.onerror = (event) => {
-        reject("Error saving songs to IndexedDB");
-      };
-    });
   });
 };
